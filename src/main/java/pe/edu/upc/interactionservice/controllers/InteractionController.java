@@ -128,14 +128,14 @@ public class InteractionController {
     }
 
     @GetMapping(path = "/condominiums/{condominiumId}/polls/{pollId}/options", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getOptionsByPoll(@PathVariable(name = "id") Long id, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> getOptionsByPoll(@PathVariable(name = "pollId") Long pollId, @RequestHeader String Authorization) {
         try {
             ResponseAuth authToken = authToken(Authorization);
             if (!authToken.isAuthorized()) {
                 unauthorizedResponse();
                 return new ResponseEntity<>(response, status);
             }
-            Optional<List<Option>> options = optionService.findAllByPoll(id);
+            Optional<List<Option>> options = optionService.findAllByPoll(pollId);
             okResponse(options.get());
             return new ResponseEntity<>(response, status);
         } catch
