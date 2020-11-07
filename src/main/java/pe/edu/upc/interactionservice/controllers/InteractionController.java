@@ -95,6 +95,7 @@ public class InteractionController {
     public void okResponse(Object result) {
         response.setStatus(HttpStatus.OK.value());
         response.setResult(result);
+        response.setMessage("SERVICE SUCCESS");
         status = HttpStatus.OK;
     }
 
