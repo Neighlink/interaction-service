@@ -17,7 +17,6 @@ import pe.edu.upc.interactionservice.services.OptionResidentService;
 import pe.edu.upc.interactionservice.services.OptionService;
 import pe.edu.upc.interactionservice.services.PollService;
 
-import javax.websocket.server.PathParam;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -43,7 +42,7 @@ public class InteractionController {
     @Autowired
     private OptionResidentService optionResidentService;
 
-    private final static String URL_PROFILE = "http://localhost:8094/profiles";
+    private final static String URL_PROFILE = "http://localhost:8092/profiles";
     private final static Logger LOGGER = Logger.getLogger("bitacora.subnivel.Control");
     HttpStatus status;
 
@@ -112,7 +111,7 @@ public class InteractionController {
     }
 
     @GetMapping(path = "/condominiums/{id}/news", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getNewsByCondominium(@PathParam("id") Long id, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> getNewsByCondominium(@PathVariable("id") Long id, @RequestHeader String Authorization) {
         try {
             ResponseAuth authToken = authToken(Authorization);
             if (!authToken.isAuthorized()) {
@@ -130,7 +129,7 @@ public class InteractionController {
     }
 
     @GetMapping(path = "/condominiums/{condominiumId}/polls/{pollId}/options", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getOptionsByPoll(@PathParam("pollId") Long pollId, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> getOptionsByPoll(@PathVariable("pollId") Long pollId, @RequestHeader String Authorization) {
         try {
             ResponseAuth authToken = authToken(Authorization);
             if (!authToken.isAuthorized()) {
@@ -148,7 +147,7 @@ public class InteractionController {
     }
 
     @PostMapping(path = "/condominiums/{condominiumId}/polls/{pollId}/replies", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> saveReplyOption(@PathParam("condominiumId") Long condominiumId, @PathParam("pollId") Long pollId, @RequestHeader String Authorization, @RequestBody RequestOption requestOption) {
+    public ResponseEntity<Response> saveReplyOption(@PathVariable("condominiumId") Long condominiumId, @PathVariable("pollId") Long pollId, @RequestHeader String Authorization, @RequestBody RequestOption requestOption) {
         try {
             ResponseAuth authToken = authToken(Authorization);
             if (!authToken.isAuthorized()) {
@@ -177,7 +176,7 @@ public class InteractionController {
     }
 
     @GetMapping(path = "/condominiums/{condominiumId}/polls/{pollId}/replies", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getAllReplyByPoll(@PathParam("condominiumId") Long condominiumId, @PathParam("pollId") Long pollId, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> getAllReplyByPoll(@PathVariable("condominiumId") Long condominiumId, @PathVariable("pollId") Long pollId, @RequestHeader String Authorization) {
         try {
             ResponseAuth authToken = authToken(Authorization);
             if (!authToken.isAuthorized()) {
@@ -211,7 +210,7 @@ public class InteractionController {
 
 
     @GetMapping(path = "/condominiums/{condominiumId}/polls/{pollId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getDetailPoll(@PathParam("condominiumId") Long condominiumId, @PathParam("pollId") Long pollId, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> getDetailPoll(@PathVariable("condominiumId") Long condominiumId, @PathVariable("pollId") Long pollId, @RequestHeader String Authorization) {
         try {
             ResponseAuth authToken = authToken(Authorization);
             if (!authToken.isAuthorized()) {
