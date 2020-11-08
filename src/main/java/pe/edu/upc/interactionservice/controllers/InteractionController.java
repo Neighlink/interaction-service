@@ -148,7 +148,7 @@ public class InteractionController {
     }
 
     @PostMapping(path = "/condominiums/{condominiumId}/polls/{pollId}/replies", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> saveReplyOption(@PathParam("condominiumId") Long condominiumId, @PathParam(name = "pollId") Long pollId, @RequestHeader String Authorization, @RequestBody RequestOption requestOption) {
+    public ResponseEntity<Response> saveReplyOption(@PathParam("condominiumId") Long condominiumId, @PathParam("pollId") Long pollId, @RequestHeader String Authorization, @RequestBody RequestOption requestOption) {
         try {
             ResponseAuth authToken = authToken(Authorization);
             if (!authToken.isAuthorized()) {
@@ -177,7 +177,7 @@ public class InteractionController {
     }
 
     @GetMapping(path = "/condominiums/{condominiumId}/polls/{pollId}/replies", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getAllReplyByPoll(@PathParam("condominiumId") Long condominiumId, @PathParam(name = "pollId") Long pollId, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> getAllReplyByPoll(@PathParam("condominiumId") Long condominiumId, @PathParam("pollId") Long pollId, @RequestHeader String Authorization) {
         try {
             ResponseAuth authToken = authToken(Authorization);
             if (!authToken.isAuthorized()) {
@@ -211,7 +211,7 @@ public class InteractionController {
 
 
     @GetMapping(path = "/condominiums/{condominiumId}/polls/{pollId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getDetailPoll(@PathParam("condominiumId") Long condominiumId, @PathParam(name = "pollId") Long pollId, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> getDetailPoll(@PathParam("condominiumId") Long condominiumId, @PathParam("pollId") Long pollId, @RequestHeader String Authorization) {
         try {
             ResponseAuth authToken = authToken(Authorization);
             if (!authToken.isAuthorized()) {
