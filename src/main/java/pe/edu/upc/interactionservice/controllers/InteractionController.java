@@ -17,6 +17,7 @@ import pe.edu.upc.interactionservice.services.OptionResidentService;
 import pe.edu.upc.interactionservice.services.OptionService;
 import pe.edu.upc.interactionservice.services.PollService;
 
+import javax.print.attribute.standard.Media;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -110,6 +111,7 @@ public class InteractionController {
         response.setMessage(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase() + " => " + message);
     }
 
+    // START NEWS
     @GetMapping(path = "/condominiums/{id}/news", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> getNewsByCondominium(@PathVariable("id") Long id, @RequestHeader String Authorization) {
         try {
@@ -127,6 +129,79 @@ public class InteractionController {
             return new ResponseEntity<>(response, status);
         }
     }
+
+    @PostMapping(path = "/condominiums/{id}/news", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> addNewsByCondominium(@PathVariable("id") Long id, @RequestHeader String Authorization, @RequestBody RequestNews requestNews) {
+        try {
+            ResponseAuth authToken = authToken(Authorization);
+            if (!authToken.isAuthorized()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            News news = new News();
+            news.setCondominiumId(id);
+            news.setDate(new Date());
+            news.setDescription(requestNews.getDescription());
+            news.setTitle(requestNews.getTitle());
+            News newsSaved = newsService.save(news);
+            okResponse(newsSaved);
+            return new ResponseEntity<>(response, status);
+        } catch
+        (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @PutMapping(path = "/condominiums/{id}/news/{newsId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> getNewsByCondominium(@PathVariable("id") Long id, @PathVariable("newsId") Long newsId, @RequestHeader String Authorization, @RequestBody RequestNews requestNews) {
+        try {
+            ResponseAuth authToken = authToken(Authorization);
+            if (!authToken.isAuthorized()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            Optional<News> news = newsService.findById(newsId);
+            if (news.isEmpty()) {
+                notFoundResponse();
+            } else {
+                news.get().setTitle(requestNews.getTitle());
+                news.get().setDescription(requestNews.getDescription());
+                News newsSaved = newsService.save(news.get());
+                okResponse(newsSaved);
+            }
+            return new ResponseEntity<>(response, status);
+        } catch
+        (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @DeleteMapping(path = "/condominiums/{id}/news/{newsId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> deleteNews(@PathVariable("id") Long id, @PathVariable("newsId") Long newsId, @RequestHeader String Authorization) {
+        try {
+            ResponseAuth authToken = authToken(Authorization);
+            if (!authToken.isAuthorized()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            Optional<News> news = newsService.findById(newsId);
+            if (news.isEmpty()) {
+                notFoundResponse();
+            } else {
+                newsService.deleteById(newsId);
+                okResponse(null);
+            }
+            return new ResponseEntity<>(response, status);
+        } catch
+        (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    // END DAYS
 
     @GetMapping(path = "/condominiums/{condominiumId}/polls/{pollId}/options", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> getOptionsByPoll(@PathVariable("pollId") Long pollId, @RequestHeader String Authorization) {
