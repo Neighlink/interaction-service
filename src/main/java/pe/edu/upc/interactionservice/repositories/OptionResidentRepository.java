@@ -12,6 +12,6 @@ import java.util.Optional;
 
 @Repository
 public interface OptionResidentRepository extends JpaRepository<OptionResident, Long> {
-    @Query("SELECT o FROM OptionResident o WHERE o.option = :option")
-    Optional<List<OptionResident>> findAllByOption(@Param("option") Option option);
+    @Query("SELECT o FROM OptionResident o WHERE o.optionId = :optionId AND o.isDelete = false")
+    List<OptionResident> findAllByOption(@Param("optionId") Long optionId);
 }

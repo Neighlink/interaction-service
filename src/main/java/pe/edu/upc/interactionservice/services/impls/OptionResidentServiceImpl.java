@@ -41,8 +41,9 @@ public class OptionResidentServiceImpl implements OptionResidentService {
         optionResidentRepository.deleteById(aLong);
     }
 
+
     @Override
-    public Optional<List<OptionResident>> findAllByOption(Option option) {
-        return optionResidentRepository.findAllByOption(option);
+    public List<OptionResident> findAllByOption(Long optionId) {
+        return optionResidentRepository.findAllByOption(optionId);
     }
 }

@@ -31,4 +31,6 @@ public class Poll {
     private Long administratorId;
     @OneToMany
     private List<Option> options;
+    @Column(nullable = false)
+    private boolean isDelete;
 }

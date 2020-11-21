@@ -39,4 +39,9 @@ public class PollServiceImpl implements PollService {
     public void deleteById(Long aLong) throws Exception {
         pollRepository.deleteById(aLong);
     }
+
+    @Override
+    public Optional<List<Poll>> findAllByCondominiumId(Long condominiumId) {
+        return pollRepository.findAllByCondominiumId(condominiumId);
+    }
 }

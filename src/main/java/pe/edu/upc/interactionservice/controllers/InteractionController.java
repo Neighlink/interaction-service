@@ -201,18 +201,35 @@ public class InteractionController {
         }
     }
 
-    // END DAYS
+    // END NEWS
 
-    @GetMapping(path = "/condominiums/{condominiumId}/polls/{pollId}/options", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getOptionsByPoll(@PathVariable("pollId") Long pollId, @RequestHeader String Authorization) {
+    // START POLL
+
+    @GetMapping(path = "/condominiums/{condominiumId}/polls", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> getPolls(@PathVariable("condominiumId") Long condominiumId, @RequestHeader String Authorization) {
         try {
             ResponseAuth authToken = authToken(Authorization);
             if (!authToken.isAuthorized()) {
                 unauthorizedResponse();
                 return new ResponseEntity<>(response, status);
             }
-            Optional<List<Option>> options = optionService.findAllByPoll(pollId);
-            okResponse(options.get());
+            Optional<List<Poll>> polls = pollService.findAllByCondominiumId(condominiumId);
+            if (polls.isEmpty()) {
+                okResponse(new ArrayList<>());
+            } else {
+                if (authToken.getUserType().equals("ADM")) {
+                    okResponse(polls.get());
+                } else {
+                    var actualDate = new Date();
+                    var pollsValid = new ArrayList<Poll>();
+                    for (Poll poll : polls.get()) {
+                        if (poll.getStartDate().getTime() <= actualDate.getTime() && actualDate.getTime() <= poll.getEndDate().getTime()) {
+                            pollsValid.add(poll);
+                        }
+                    }
+                    okResponse(pollsValid);
+                }
+            }
             return new ResponseEntity<>(response, status);
         } catch
         (Exception e) {
@@ -221,26 +238,106 @@ public class InteractionController {
         }
     }
 
-    @PostMapping(path = "/condominiums/{condominiumId}/polls/{pollId}/replies", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> saveReplyOption(@PathVariable("condominiumId") Long condominiumId, @PathVariable("pollId") Long pollId, @RequestHeader String Authorization, @RequestBody RequestOption requestOption) {
+    @PostMapping(path = "/condominiums/{condominiumId}/polls", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> addPoll(@PathVariable("condominiumId") Long condominiumId, @RequestHeader String Authorization, @RequestBody RequestPoll requestPoll) {
         try {
             ResponseAuth authToken = authToken(Authorization);
             if (!authToken.isAuthorized()) {
                 unauthorizedResponse();
                 return new ResponseEntity<>(response, status);
             }
-            // TODO: VALIDAR SI EXISTE OPCION SELECCIONADA
-            Optional<Option> option = optionService.findById(requestOption.getOptionId());
-            if (option.isEmpty()) {
+
+            Poll poll = new Poll();
+            poll.setTitle(requestPoll.getTitle());
+            poll.setDescription(requestPoll.getDescription());
+            poll.setStartDate(requestPoll.getStartDate());
+            poll.setEndDate(requestPoll.getEndDate());
+            poll.setAdministratorId(authToken.getId());
+            poll.setDelete(false);
+            poll.setCondominiumId(condominiumId);
+            Poll pollSaved = pollService.save(poll);
+            var options = new ArrayList<Option>();
+            for (Option option : requestPoll.getOptions()) {
+                Option newOption = new Option();
+                newOption.setName(option.getName());
+                newOption.setDescription(option.getDescription());
+                newOption.setPollId(pollSaved.getId());
+                Option optionSaved = optionService.save(newOption);
+                options.add(optionSaved);
+            }
+            pollSaved.setOptions(options);
+            okResponse(pollSaved);
+            return new ResponseEntity<>(response, status);
+        } catch
+        (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @PutMapping(path = "/condominiums/{condominiumId}/polls/{pollId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> updatePoll(@PathVariable("condominiumId") Long condominiumId, @PathVariable("pollId") Long pollId, @RequestHeader String Authorization, @RequestBody RequestPoll requestPoll) {
+        try {
+            ResponseAuth authToken = authToken(Authorization);
+            if (!authToken.isAuthorized()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+
+            var poll = pollService.findById(pollId);
+            if (poll.isEmpty()) {
+                notFoundResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            poll.get().setTitle(requestPoll.getTitle());
+            poll.get().setDescription(requestPoll.getDescription());
+            poll.get().setStartDate(requestPoll.getStartDate());
+            poll.get().setEndDate(requestPoll.getEndDate());
+            Poll pollSaved = pollService.save(poll.get());
+            var options = new ArrayList<Option>();
+            for (Option option : requestPoll.getOptions()) {
+                if (option.getId() != null) {
+                    var findOption = optionService.findById(option.getId());
+                    if (!findOption.isEmpty()) {
+                        findOption.get().setName(option.getName());
+                        findOption.get().setDescription(option.getDescription());
+                        Option optionSaved = optionService.save(findOption.get());
+                        options.add(optionSaved);
+                    }
+                } else {
+                    Option newOption = new Option();
+                    newOption.setName(option.getName());
+                    newOption.setDescription(option.getDescription());
+                    newOption.setPollId(pollSaved.getId());
+                    Option optionSaved = optionService.save(newOption);
+                    options.add(optionSaved);
+                }
+            }
+            pollSaved.setOptions(options);
+            okResponse(pollSaved);
+            return new ResponseEntity<>(response, status);
+        } catch
+        (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @DeleteMapping(path = "/condominiums/{condominiumId}/polls/{pollId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> deletePoll(@PathVariable("condominiumId") Long condominiumId, @PathVariable("pollId") Long pollId, @RequestHeader String Authorization) {
+        try {
+            ResponseAuth authToken = authToken(Authorization);
+            if (!authToken.isAuthorized()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            var poll = pollService.findById(pollId);
+            if (poll.isEmpty()) {
                 notFoundResponse();
             } else {
-                OptionResident optionResident = new OptionResident();
-                optionResident.setDate(new Date());
-                optionResident.setComment(requestOption.getComment());
-                optionResident.setResidentId(authToken.getId());
-                optionResident.setOption(option.get());
-                OptionResident optionSaved = optionResidentService.save(optionResident);
-                okResponse(optionSaved);
+                poll.get().setDelete(true);
+                pollService.save(poll.get());
+                okResponse(null);
             }
             return new ResponseEntity<>(response, status);
         } catch
@@ -249,32 +346,42 @@ public class InteractionController {
             return new ResponseEntity<>(response, status);
         }
     }
+    // END POLL
 
-    @GetMapping(path = "/condominiums/{condominiumId}/polls/{pollId}/replies", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getAllReplyByPoll(@PathVariable("condominiumId") Long condominiumId, @PathVariable("pollId") Long pollId, @RequestHeader String Authorization) {
+    // START RESPONSE POLL RESIDENT
+    @GetMapping(path = "/condominiums/{condominiumId}/polls/{pollId}/responses", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> getPollsResponseResident(@PathVariable("condominiumId") Long condominiumId, @PathVariable("pollId") Long pollId, @RequestHeader String Authorization) {
         try {
             ResponseAuth authToken = authToken(Authorization);
             if (!authToken.isAuthorized()) {
                 unauthorizedResponse();
                 return new ResponseEntity<>(response, status);
             }
-            ResponsePollResident responsePollResident = new ResponsePollResident();
-            Optional<Poll> poll = pollService.findById(pollId);
+
+            var poll = pollService.findById(pollId);
             if (poll.isEmpty()) {
                 notFoundResponse();
+                return new ResponseEntity<>(response, status);
             }
-            responsePollResident.setPoll(poll.get());
-            Optional<List<Option>> options = optionService.findAllByPoll(pollId);
-            List<OptionReplyModel> optionReplies = new ArrayList<>();
+
+            var options = optionService.findAllByPoll(pollId);
+            if (options.isEmpty()) {
+                notFoundResponse();
+                return new ResponseEntity<>(response, status);
+            }
+
+            var responsePoll = new ResponsePollResident();
+            responsePoll.setPoll(poll.get());
+            var optionReplies = new ArrayList<OptionReplyModel>();
             for (Option option : options.get()) {
-                OptionReplyModel optionReply = new OptionReplyModel();
-                Optional<List<OptionResident>> optionResidents = optionResidentService.findAllByOption(option);
+                var optionReply = new OptionReplyModel();
+                var optionsResident = optionResidentService.findAllByOption(option.getId());
                 optionReply.setOption(option);
-                optionReply.setOptionResidents(optionResidents.get());
+                optionReply.setOptionResidents(optionsResident);
                 optionReplies.add(optionReply);
             }
-            responsePollResident.setOptionReplies(optionReplies);
-            okResponse(responsePollResident);
+            responsePoll.setOptionReplies(optionReplies);
+            okResponse(responsePoll);
             return new ResponseEntity<>(response, status);
         } catch
         (Exception e) {
@@ -283,22 +390,23 @@ public class InteractionController {
         }
     }
 
-
-    @GetMapping(path = "/condominiums/{condominiumId}/polls/{pollId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getDetailPoll(@PathVariable("condominiumId") Long condominiumId, @PathVariable("pollId") Long pollId, @RequestHeader String Authorization) {
+    @PostMapping(path = "/condominiums/{condominiumId}/polls/{pollId}/responses", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> addResponseResident(@PathVariable("condominiumId") Long condominiumId, @RequestHeader String Authorization, @RequestBody RequestOptionResident requestOptionResident) {
         try {
             ResponseAuth authToken = authToken(Authorization);
             if (!authToken.isAuthorized()) {
                 unauthorizedResponse();
                 return new ResponseEntity<>(response, status);
             }
-            Optional<Poll> poll = pollService.findById(pollId);
-            if (poll.isEmpty()) {
-                notFoundResponse();
-            }
-            Optional<List<Option>> options = optionService.findAllByPoll(pollId);
-            poll.get().setOptions(options.get());
-            okResponse(poll);
+
+            OptionResident optionResident = new OptionResident();
+            optionResident.setDate(new Date());
+            optionResident.setComment(requestOptionResident.getComment());
+            optionResident.setOptionId(requestOptionResident.getOptionId());
+            optionResident.setDelete(false);
+            optionResident.setResidentId(authToken.getId());
+            var optionResidentSaved = optionResidentService.save(optionResident);
+            okResponse(optionResidentSaved);
             return new ResponseEntity<>(response, status);
         } catch
         (Exception e) {
@@ -306,5 +414,32 @@ public class InteractionController {
             return new ResponseEntity<>(response, status);
         }
     }
+
+
+    @DeleteMapping(path = "/condominiums/{condominiumId}/polls/{pollId}/responses/{responseId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> deleteResponseResident(@PathVariable("condominiumId") Long condominiumId, @PathVariable("pollId") Long pollId, @PathVariable("responseId") Long responseId, @RequestHeader String Authorization) {
+        try {
+            ResponseAuth authToken = authToken(Authorization);
+            if (!authToken.isAuthorized()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            var optionResident = optionResidentService.findById(responseId);
+            if (optionResident.isEmpty()) {
+                notFoundResponse();
+
+            } else {
+                optionResident.get().setDelete(true);
+                optionResidentService.save(optionResident.get());
+                okResponse(null);
+            }
+            return new ResponseEntity<>(response, status);
+        } catch
+        (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+    // END RESPONSE POLL RESIDENT
 
 }

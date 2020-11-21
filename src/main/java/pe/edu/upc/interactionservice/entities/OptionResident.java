@@ -17,12 +17,12 @@ public class OptionResident {
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date date;
-    @OneToOne(fetch = FetchType.LAZY)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    @JoinColumn(name = "optionId", nullable = true)
-    private Option option;
+    @Column(nullable = false)
+    private Long optionId;
     @Column(nullable = false)
     private Long residentId;
     @Column(nullable = true)
     private String comment;
+    @Column(nullable = true)
+    private boolean isDelete;
 }
